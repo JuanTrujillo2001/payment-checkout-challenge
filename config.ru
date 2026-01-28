@@ -14,15 +14,18 @@ require_relative "./app/ports/product_repository"
 require_relative "./app/ports/customer_repository"
 require_relative "./app/ports/delivery_repository"
 require_relative "./app/ports/transaction_repository"
+require_relative "./app/ports/payment_gateway"
 
 # adapters
 require_relative "./app/adapters/sequel_product_repository"
 require_relative "./app/adapters/sequel_customer_repository"
 require_relative "./app/adapters/sequel_delivery_repository"
 require_relative "./app/adapters/sequel_transaction_repository"
+require_relative "./app/adapters/wompi_payment_gateway"
 
 # use cases
 require_relative "./app/use_cases/create_transaction"
+require_relative "./app/use_cases/process_payment"
 
 # controllers
 require_relative "./app/controllers/products_controller"
