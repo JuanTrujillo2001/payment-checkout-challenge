@@ -22,4 +22,5 @@ group :development, :test do
   gem "rack-test"
   gem "pry"
   gem "simplecov"
+  gem "webmock"
 end
