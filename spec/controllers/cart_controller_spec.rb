@@ -11,7 +11,7 @@ RSpec.describe 'Cart Controller' do
   let(:product_id) { SecureRandom.uuid }
 
   let(:product) do
-    instance_double('Product', id: product_id, name: 'Test Product', description: 'Desc', price_cents: 150_000, stock: 10)
+    instance_double('Product', id: product_id, name: 'Test Product', description: 'Desc', price_cents: 150_000, stock: 10, image_url: 'https://example.com/product.png')
   end
 
   let(:cart_item) do

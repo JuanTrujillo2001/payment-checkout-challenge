@@ -20,7 +20,8 @@ get "/cart/:session_id" do
       price_cents: product&.price_cents,
       quantity: item.quantity,
       subtotal_cents: (product&.price_cents || 0) * item.quantity,
-      stock: product&.stock
+      stock: product&.stock,
+      image_url: product&.image_url
     }
   end
 
