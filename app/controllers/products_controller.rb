@@ -1,6 +1,9 @@
 require "sinatra"
 require "sinatra/json"
 
+# Disable host authorization for Railway/cloud deployment
+disable :protection
+
 require_relative "../domain/entities/product"
 
 get "/products" do
