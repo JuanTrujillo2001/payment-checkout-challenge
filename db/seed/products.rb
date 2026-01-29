@@ -77,4 +77,4 @@ products.each do |product|
   DB[:products].insert(product)
 end
 
-puts "✅ #{products.length} productos creados"
+puts "#{products.length} productos creados"

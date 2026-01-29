@@ -39,4 +39,4 @@ DB.tables.each do |table|
   end
 end
 
-puts "\n✅ Base de datos limpia"
+puts "\n Base de datos limpia"
