@@ -12,7 +12,7 @@ require_relative "./app/db"
 
 use Rack::Cors do
   allow do
-    origins ENV.fetch("ALLOWED_ORIGINS", "*")
+    origins ENV.fetch("ALLOWED_ORIGINS")
     resource "*",
       headers: :any,
       methods: [:get, :post, :put, :patch, :delete, :options]

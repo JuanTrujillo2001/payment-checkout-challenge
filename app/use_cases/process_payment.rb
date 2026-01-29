@@ -1,5 +1,6 @@
 require "dry/monads"
 require "dry/monads/do"
+require "logger"
 
 module UseCases
   class ProcessPayment
@@ -60,18 +61,25 @@ module UseCases
 
     def tokenize_card(card_data)
       result = @payment_gateway.tokenize_card(card_data)
+
       unless result[:success]
-        puts "[WOMPI TOKENIZE ERROR] #{result[:error].inspect}"
-        return Failure(error: :tokenization_failed, message: result[:error]&.dig("error", "message") || "Card tokenization failed", wompi_error: result[:error])
+        logger.error "[WOMPI] Card tokenization failed"
+
+        return Failure(
+          error: :tokenization_failed,
+          message: result[:error]&.dig("error", "message") || "Card tokenization failed",
+          wompi_error: sanitize_wompi_error(result[:error])
+        )
       end
 
-      puts "[WOMPI] Card tokenized: #{result[:data]["id"]}"
+      logger.info "[WOMPI] Card tokenization successful"
       Success(result[:data]["id"])
     end
 
+
     def create_payment_source(token, transaction, acceptance_token)
       customer = Customer[transaction.customer_id]
-      
+
       result = @payment_gateway.create_payment_source(
         token: token,
         customer_email: customer.email,
@@ -79,17 +87,27 @@ module UseCases
       )
 
       unless result[:success]
-        puts "[WOMPI PAYMENT SOURCE ERROR] #{result[:error].inspect}"
-        return Failure(error: :payment_source_failed, message: result[:error]&.dig("error", "message") || "Payment source creation failed", wompi_error: result[:error])
+        logger.error "[WOMPI] Payment source creation failed"
+
+        return Failure(
+          error: :payment_source_failed,
+          message: result[:error]&.dig("error", "message") || "Payment source creation failed",
+          wompi_error: sanitize_wompi_error(result[:error])
+        )
       end
 
-      puts "[WOMPI] Payment source created: #{result[:data]["id"]}"
+      logger.info "[WOMPI] Payment source created successfully"
       Success(result[:data]["id"])
     end
 
+
     def create_wompi_transaction(transaction, payment_source_id, installments)
       customer = Customer[transaction.customer_id]
-      total_amount = transaction.amount_cents + transaction.base_fee_cents + transaction.delivery_fee_cents
+
+      total_amount =
+        transaction.amount_cents +
+        transaction.base_fee_cents +
+        transaction.delivery_fee_cents
 
       result = @payment_gateway.create_transaction(
         amount_cents: total_amount,
@@ -101,15 +119,23 @@ module UseCases
       )
 
       unless result[:success]
-        error_message = result[:error]&.dig("error", "message") || 
-                        result[:error]&.dig("error", "reason") ||
-                        result[:error].to_s
-        puts "[WOMPI ERROR] #{result[:error].inspect}"
-        return Failure(error: :wompi_transaction_failed, message: error_message, wompi_error: result[:error])
+        logger.error "[WOMPI] Transaction creation failed"
+
+        error_message =
+          result[:error]&.dig("error", "message") ||
+          result[:error]&.dig("error", "reason") ||
+          "Wompi transaction failed"
+
+        return Failure(
+          error: :wompi_transaction_failed,
+          message: error_message,
+          wompi_error: sanitize_wompi_error(result[:error])
+        )
       end
 
       Success(result[:data])
     end
+
 
     def update_transaction_status(transaction, wompi_transaction)
       status = wompi_transaction["status"]
@@ -132,6 +158,17 @@ module UseCases
         wompi_status: wompi_transaction["status"],
         finalized_at: wompi_transaction["finalized_at"]
       }
+    end
+
+    def logger
+      @logger ||= Logger.new($stdout)
+    end
+
+    def sanitize_wompi_error(error)
+      return nil unless error
+
+      # Avoid accidentally logging/surfacing huge or sensitive payloads.
+      error.is_a?(Hash) ? error.dup : error
     end
   end
 end

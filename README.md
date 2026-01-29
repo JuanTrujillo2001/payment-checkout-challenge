@@ -490,12 +490,19 @@ ALLOWED_ORIGINS=http://localhost:5173
 ALLOWED_ORIGINS=https://d1234abcd.cloudfront.net,https://tu-dominio.com
 ```
 
-## 🔒 Seguridad
+## 🔒 Seguridad y Buenas Prácticas
 
-- Las credenciales de Wompi se manejan via variables de entorno
-- No se almacenan datos sensibles de tarjetas (tokenización con Wompi)
-- CORS configurado para permitir requests del frontend
-- Validación de datos en cada endpoint
+El backend cumple con las siguientes prácticas de seguridad recomendadas por OWASP:
+
+- ✅ **HTTPS**: Railway sirve la API con HTTPS, asegurando que toda comunicación esté cifrada.
+- ✅ **CORS restringido**: solo permite requests desde orígenes autorizados (frontend en CloudFront).
+- ✅ **Cabeceras de seguridad (Security Headers)**: CloudFront y Sinatra permiten agregar cabeceras como:
+  - `Content-Security-Policy` → Previene inyección de scripts.
+  - `X-Content-Type-Options: nosniff` → Evita que el navegador interprete mal archivos.
+  - `Strict-Transport-Security` → Fuerza uso de HTTPS.
+- ✅ **Validación de datos** en todos los endpoints para evitar inyecciones y entradas maliciosas.
+- ✅ **Tokenización de tarjetas**: No se almacenan datos sensibles de tarjetas, todo se maneja mediante tokens de Wompi.
+- ✅ **Principios OWASP** aplicados en toda la arquitectura: separación de capas, manejo seguro de errores y control de accesos.
 
 ## 🚀 Despliegue
 
