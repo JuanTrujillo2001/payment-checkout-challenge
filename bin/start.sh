@@ -5,7 +5,7 @@ echo "Running migrations..."
 ruby db/migrate.rb
 
 echo "Running seeds..."
-ruby db/seed.rb
+ruby db/seed/products.rb
 
 echo "Starting server..."
 exec bundle exec rackup -p ${PORT:-4567} -o 0.0.0.0
