@@ -7,9 +7,11 @@ module UseCases
 
     CURRENCY = "COP"
 
-    def initialize(transaction_repo:, payment_gateway:)
+    def initialize(transaction_repo:, payment_gateway:, product_repo: nil, cart_repo: nil)
       @transaction_repo = transaction_repo
       @payment_gateway = payment_gateway
+      @product_repo = product_repo
+      @cart_repo = cart_repo
     end
 
     def call(transaction_id:, card_data:, installments: 1)
@@ -20,6 +22,16 @@ module UseCases
       payment_source = yield create_payment_source(token, transaction, acceptance)
       wompi_transaction = yield create_wompi_transaction(transaction, payment_source, installments)
       updated_transaction = yield update_transaction_status(transaction, wompi_transaction)
+
+      # Si el pago fue aprobado, ejecutar fulfillment (descontar stock + limpiar carrito)
+      if wompi_transaction["status"].upcase == "APPROVED" && @product_repo && @cart_repo
+        fulfill_use_case = UseCases::FulfillTransaction.new(
+          transaction_repo: @transaction_repo,
+          product_repo: @product_repo,
+          cart_repo: @cart_repo
+        )
+        fulfill_use_case.call(transaction_id: updated_transaction.id)
+      end
 
       Success(build_response(updated_transaction, wompi_transaction))
     end
@@ -48,8 +60,12 @@ module UseCases
 
     def tokenize_card(card_data)
       result = @payment_gateway.tokenize_card(card_data)
-      return Failure(error: :tokenization_failed, message: result[:error]&.dig("error", "message") || "Card tokenization failed") unless result[:success]
+      unless result[:success]
+        puts "[WOMPI TOKENIZE ERROR] #{result[:error].inspect}"
+        return Failure(error: :tokenization_failed, message: result[:error]&.dig("error", "message") || "Card tokenization failed", wompi_error: result[:error])
+      end
 
+      puts "[WOMPI] Card tokenized: #{result[:data]["id"]}"
       Success(result[:data]["id"])
     end
 
@@ -62,8 +78,12 @@ module UseCases
         acceptance_token: acceptance_token
       )
 
-      return Failure(error: :payment_source_failed, message: result[:error]&.dig("error", "message") || "Payment source creation failed") unless result[:success]
+      unless result[:success]
+        puts "[WOMPI PAYMENT SOURCE ERROR] #{result[:error].inspect}"
+        return Failure(error: :payment_source_failed, message: result[:error]&.dig("error", "message") || "Payment source creation failed", wompi_error: result[:error])
+      end
 
+      puts "[WOMPI] Payment source created: #{result[:data]["id"]}"
       Success(result[:data]["id"])
     end
 
@@ -80,7 +100,13 @@ module UseCases
         installments: installments
       )
 
-      return Failure(error: :wompi_transaction_failed, message: result[:error]&.dig("error", "message") || "Wompi transaction failed") unless result[:success]
+      unless result[:success]
+        error_message = result[:error]&.dig("error", "message") || 
+                        result[:error]&.dig("error", "reason") ||
+                        result[:error].to_s
+        puts "[WOMPI ERROR] #{result[:error].inspect}"
+        return Failure(error: :wompi_transaction_failed, message: error_message, wompi_error: result[:error])
+      end
 
       Success(result[:data])
     end

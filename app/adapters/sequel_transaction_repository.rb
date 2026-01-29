@@ -28,9 +28,17 @@ module Adapters
     end
 
     def next_reference_number
-      year = Time.now.year
-      count = Transaction.where(Sequel.like(:reference, "TX-#{year}-%")).count
-      format("TX-#{year}-%04d", count + 1)
+      timestamp = Time.now.strftime("%Y%m%d%H%M%S")
+      random = SecureRandom.hex(4).upcase
+      "TX-#{timestamp}-#{random}"
+    end
+
+    def mark_fulfilled(id)
+      transaction = Transaction[id]
+      return nil unless transaction
+
+      transaction.update(fulfilled_at: Time.now)
+      transaction
     end
   end
 end

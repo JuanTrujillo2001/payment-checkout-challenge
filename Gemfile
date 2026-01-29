@@ -4,6 +4,7 @@ ruby "3.2.2"
 
 gem "sinatra"
 gem "sinatra-contrib"
+gem "rack-cors"
 gem "rackup"
 gem "puma"
 gem "sequel"
