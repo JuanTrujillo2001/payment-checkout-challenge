@@ -11,4 +11,4 @@ else
   Sequel::Migrator.run(DB, "db/migrations")
 end
 
-puts "✅ Migraciones actualizadas"
+puts "Migraciones actualizadas"
