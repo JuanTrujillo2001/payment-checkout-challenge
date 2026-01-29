@@ -49,7 +49,7 @@ require_relative "./app/controllers/products_controller"
 require_relative "./app/controllers/transactions_controller"
 require_relative "./app/controllers/cart_controller"
 
-# Disable host authorization for Railway deployment
-Sinatra::Application.set :protection, except: [:host_authorization]
+# Disable ALL protection for Railway deployment (CORS handles security)
+Sinatra::Application.disable :protection
 
 run Sinatra::Application
