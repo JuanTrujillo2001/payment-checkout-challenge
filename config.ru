@@ -2,9 +2,6 @@ require "dotenv/load"
 require "dry/monads"
 require "rack/cors"
 
-# Disable host authorization for Railway deployment
-Sinatra::Application.set :protection, except: [:host_authorization]
-
 require_relative "./app/db"
 
 use Rack::Cors do
@@ -51,5 +48,8 @@ require_relative "./app/use_cases/fulfill_transaction"
 require_relative "./app/controllers/products_controller"
 require_relative "./app/controllers/transactions_controller"
 require_relative "./app/controllers/cart_controller"
+
+# Disable host authorization for Railway deployment
+Sinatra::Application.set :protection, except: [:host_authorization]
 
 run Sinatra::Application
