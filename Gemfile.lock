@@ -53,23 +53,16 @@ GEM
       method_source (~> 1.0)
       reline (>= 0.6.0)
     public_suffix (7.0.2)
-    puma (7.2.0)
+    puma (6.6.1)
       nio4r (~> 2.0)
-    rack (3.2.4)
-    rack-cors (3.0.0)
-      logger
-      rack (>= 3.0.14)
-    rack-protection (4.2.1)
+    rack (2.2.21)
+    rack-cors (2.0.2)
+      rack (>= 2.0.0)
+    rack-protection (3.2.0)
       base64 (>= 0.1.0)
-      logger (>= 1.6.0)
-      rack (>= 3.0.0, < 4)
-    rack-session (2.1.1)
-      base64 (>= 0.1.0)
-      rack (>= 3.0.0)
+      rack (~> 2.2, >= 2.2.4)
     rack-test (2.2.0)
       rack (>= 1.3)
-    rackup (2.3.1)
-      rack (>= 3)
     reline (0.6.3)
       io-console (~> 0.5)
     rexml (3.4.4)
@@ -85,7 +78,7 @@ GEM
     rspec-mocks (3.13.7)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
-    rspec-support (3.13.6)
+    rspec-support (3.13.7)
     ruby2_keywords (0.0.5)
     sequel (5.100.0)
       bigdecimal
@@ -95,18 +88,16 @@ GEM
       simplecov_json_formatter (~> 0.1)
     simplecov-html (0.13.2)
     simplecov_json_formatter (0.1.4)
-    sinatra (4.2.1)
-      logger (>= 1.6.0)
+    sinatra (3.2.0)
       mustermann (~> 3.0)
-      rack (>= 3.0.0, < 4)
-      rack-protection (= 4.2.1)
-      rack-session (>= 2.0.0, < 3)
+      rack (~> 2.2, >= 2.2.4)
+      rack-protection (= 3.2.0)
       tilt (~> 2.0)
-    sinatra-contrib (4.2.1)
+    sinatra-contrib (3.2.0)
       multi_json (>= 0.0.2)
       mustermann (~> 3.0)
-      rack-protection (= 4.2.1)
-      sinatra (= 4.2.1)
+      rack-protection (= 3.2.0)
+      sinatra (= 3.2.0)
       tilt (~> 2.0)
     tilt (2.7.0)
     webmock (3.26.1)
@@ -125,15 +116,16 @@ DEPENDENCIES
   httparty
   pg
   pry
-  puma
+  puma (~> 6.4)
+  rack (~> 2.2)
   rack-cors
+  rack-protection (~> 3.1)
   rack-test
-  rackup
   rspec
   sequel
   simplecov
-  sinatra
-  sinatra-contrib
+  sinatra (~> 3.1)
+  sinatra-contrib (~> 3.1)
   webmock
 
 RUBY VERSION

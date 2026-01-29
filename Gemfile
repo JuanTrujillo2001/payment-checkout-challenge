@@ -2,11 +2,19 @@ source "https://rubygems.org"
 
 ruby "3.2.2"
 
-gem "sinatra"
-gem "sinatra-contrib"
+# Framework permitido
+gem "sinatra", "~> 3.1"
+gem "sinatra-contrib", "~> 3.1"
+
+# Rack (NO Rack 3)
+gem "rack", "~> 2.2"
+gem "rack-protection", "~> 3.1"
+
+# Server estable
+gem "puma", "~> 6.4"
+
+# Infra
 gem "rack-cors"
-gem "rackup"
-gem "puma"
 gem "sequel"
 gem "pg"
 gem "dotenv"
