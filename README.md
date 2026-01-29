@@ -394,6 +394,31 @@ Esto permite:
 - Tests sin depender del sandbox de Wompi
 - Simular escenarios de error fácilmente
 
+### Resultado Actual
+
+```
+146 examples, 0 failures
+Line Coverage: 88.11%
+```
+
+### Suites de Tests
+
+| Suite | Tests | Descripción |
+|-------|-------|-------------|
+| `adapters/sequel_cart_repository_spec.rb` | 10 | Repositorio de carrito |
+| `adapters/sequel_customer_repository_spec.rb` | 4 | Repositorio de clientes |
+| `adapters/sequel_delivery_repository_spec.rb` | 5 | Repositorio de entregas |
+| `adapters/sequel_product_repository_spec.rb` | 4 | Repositorio de productos |
+| `adapters/sequel_transaction_repository_spec.rb` | 14 | Repositorio de transacciones |
+| `adapters/wompi_payment_gateway_spec.rb` | 12 | Gateway de pagos Wompi |
+| `controllers/cart_controller_spec.rb` | 14 | Endpoints de carrito |
+| `controllers/products_controller_spec.rb` | 5 | Endpoints de productos |
+| `controllers/transactions_controller_spec.rb` | 27 | Endpoints de transacciones |
+| `use_cases/create_transaction_spec.rb` | 12 | Crear transacción (legacy) |
+| `use_cases/create_transaction_from_cart_spec.rb` | 9 | Crear transacción desde carrito |
+| `use_cases/fulfill_transaction_spec.rb` | 10 | Fulfillment post-pago |
+| `use_cases/process_payment_spec.rb` | 20 | Procesamiento de pagos |
+
 ### Comandos
 
 ```bash

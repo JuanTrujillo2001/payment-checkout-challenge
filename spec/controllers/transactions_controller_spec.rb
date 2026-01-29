@@ -119,6 +119,116 @@ RSpec.describe 'Transactions Controller' do
     end
   end
 
+  describe 'POST /transactions/from-cart' do
+    let(:session_id) { SecureRandom.uuid }
+
+    let(:valid_params) do
+      {
+        session_id: session_id,
+        customer: {
+          full_name: 'Juan Test',
+          identity_document: 12345678,
+          email: 'juan@test.com',
+          phone: '3001234567'
+        },
+        delivery: {
+          address: 'Calle 123',
+          city: 'Bogotá',
+          country: 'Colombia'
+        }
+      }
+    end
+
+    context 'when request is successful' do
+      let(:success_result) do
+        Dry::Monads::Success({
+          transaction_id: 'tx-uuid',
+          reference: 'TX-2026-0001',
+          status: 'pending',
+          items: [
+            { product_id: 'prod-1', product_name: 'Product 1', quantity: 2, price_cents: 150_000, subtotal_cents: 300_000 }
+          ],
+          amount_cents: 300_000,
+          base_fee_cents: 500_000,
+          delivery_fee_cents: 1_000_000,
+          total_cents: 1_800_000
+        })
+      end
+
+      before do
+        use_case = instance_double(UseCases::CreateTransactionFromCart)
+        allow(UseCases::CreateTransactionFromCart).to receive(:new).and_return(use_case)
+        allow(use_case).to receive(:call).and_return(success_result)
+      end
+
+      it 'returns 201 status' do
+        post '/transactions/from-cart', valid_params.to_json, { 'CONTENT_TYPE' => 'application/json' }
+
+        expect(last_response.status).to eq(201)
+      end
+
+      it 'returns transaction data with items' do
+        post '/transactions/from-cart', valid_params.to_json, { 'CONTENT_TYPE' => 'application/json' }
+
+        body = JSON.parse(last_response.body)
+        expect(body['transaction_id']).to eq('tx-uuid')
+        expect(body['reference']).to eq('TX-2026-0001')
+        expect(body['items'].length).to eq(1)
+      end
+    end
+
+    context 'when cart is empty' do
+      let(:failure_result) do
+        Dry::Monads::Failure({ error: :empty_cart, message: 'Cart is empty' })
+      end
+
+      before do
+        use_case = instance_double(UseCases::CreateTransactionFromCart)
+        allow(UseCases::CreateTransactionFromCart).to receive(:new).and_return(use_case)
+        allow(use_case).to receive(:call).and_return(failure_result)
+      end
+
+      it 'returns 422 status' do
+        post '/transactions/from-cart', valid_params.to_json, { 'CONTENT_TYPE' => 'application/json' }
+
+        expect(last_response.status).to eq(422)
+      end
+
+      it 'returns error message' do
+        post '/transactions/from-cart', valid_params.to_json, { 'CONTENT_TYPE' => 'application/json' }
+
+        body = JSON.parse(last_response.body)
+        expect(body['error']).to eq('empty_cart')
+      end
+    end
+
+    context 'when stock is insufficient' do
+      let(:failure_result) do
+        Dry::Monads::Failure({ error: :insufficient_stock, message: 'Insufficient stock', product_id: 'prod-1' })
+      end
+
+      before do
+        use_case = instance_double(UseCases::CreateTransactionFromCart)
+        allow(UseCases::CreateTransactionFromCart).to receive(:new).and_return(use_case)
+        allow(use_case).to receive(:call).and_return(failure_result)
+      end
+
+      it 'returns 422 status' do
+        post '/transactions/from-cart', valid_params.to_json, { 'CONTENT_TYPE' => 'application/json' }
+
+        expect(last_response.status).to eq(422)
+      end
+    end
+
+    context 'when JSON is invalid' do
+      it 'returns 400 status' do
+        post '/transactions/from-cart', 'invalid json', { 'CONTENT_TYPE' => 'application/json' }
+
+        expect(last_response.status).to eq(400)
+      end
+    end
+  end
+
   describe 'GET /transactions/:id' do
     context 'when transaction exists' do
       let(:transaction) do
@@ -283,7 +393,8 @@ RSpec.describe 'Transactions Controller' do
           id: 'tx-uuid',
           reference: 'TX-2026-0001',
           status: 'PENDING',
-          wompi_transaction_id: 'wompi-123'
+          wompi_transaction_id: 'wompi-123',
+          :[] => nil
         )
       end
 
@@ -305,10 +416,16 @@ RSpec.describe 'Transactions Controller' do
         allow(Adapters::SequelTransactionRepository).to receive(:new).and_return(repo)
         allow(repo).to receive(:find_by_id).with('tx-uuid').and_return(transaction)
         allow(repo).to receive(:update_status)
+        allow(transaction).to receive(:[]).with(:fulfilled_at).and_return(nil)
 
         gateway = instance_double(Adapters::WompiPaymentGateway)
         allow(Adapters::WompiPaymentGateway).to receive(:new).and_return(gateway)
         allow(gateway).to receive(:get_transaction).with('wompi-123').and_return(wompi_response)
+
+        # Mock FulfillTransaction para cuando el status cambie a APPROVED
+        fulfill_use_case = instance_double(UseCases::FulfillTransaction)
+        allow(UseCases::FulfillTransaction).to receive(:new).and_return(fulfill_use_case)
+        allow(fulfill_use_case).to receive(:call).and_return(Dry::Monads::Success(transaction))
       end
 
       it 'returns 200 status' do

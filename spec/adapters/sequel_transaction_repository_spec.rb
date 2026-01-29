@@ -167,16 +167,96 @@ RSpec.describe Adapters::SequelTransactionRepository do
   end
 
   describe '#next_reference_number' do
-    it 'generates reference with current year' do
+    it 'generates reference with timestamp and random hex' do
       reference = repo.next_reference_number
 
-      expect(reference).to match(/^TX-#{Time.now.year}-\d{4}$/)
+      expect(reference).to match(/^TX-\d{14}-[A-F0-9]{8}$/)
     end
 
-    it 'increments the counter' do
+    it 'generates unique references' do
       ref1 = repo.next_reference_number
+      ref2 = repo.next_reference_number
 
-      expect(ref1).to match(/^TX-\d{4}-\d{4}$/)
+      expect(ref1).not_to eq(ref2)
+    end
+  end
+
+  describe '#mark_fulfilled' do
+    let(:product) { Product.create(name: 'Test Product', description: 'Test', price_cents: 100_000, stock: 10) }
+    let(:customer) { Customer.create(full_name: 'Test User', identity_document: 12345678, email: 'fulfill@test.com') }
+    let(:delivery) { Delivery.create(customer_id: customer.id, address: 'Test', city: 'Test', country: 'CO') }
+    let!(:transaction) do
+      Transaction.create(
+        reference: 'TX-FULFILL-0001',
+        status: 'APPROVED',
+        amount_cents: 100_000,
+        base_fee_cents: 5000,
+        delivery_fee_cents: 10_000,
+        product_id: product.id,
+        customer_id: customer.id,
+        delivery_id: delivery.id,
+        session_id: 'session-123'
+      )
+    end
+
+    after do
+      Transaction.where(id: transaction.id).delete
+      Delivery.where(id: delivery.id).delete
+      Customer.where(id: customer.id).delete
+      Product.where(id: product.id).delete
+    end
+
+    it 'sets fulfilled_at timestamp' do
+      updated = repo.mark_fulfilled(transaction.id)
+
+      expect(updated[:fulfilled_at]).not_to be_nil
+      expect(updated[:fulfilled_at]).to be_a(Time)
+    end
+
+    it 'returns nil when transaction not found' do
+      result = repo.mark_fulfilled('00000000-0000-0000-0000-000000000000')
+
+      expect(result).to be_nil
+    end
+  end
+
+  describe '#create with session_id' do
+    let(:product) { Product.create(name: 'Test Product', description: 'Test', price_cents: 100_000, stock: 10) }
+    let(:customer) { Customer.create(full_name: 'Test User', identity_document: 12345678, email: 'session@test.com') }
+    let(:delivery) { Delivery.create(customer_id: customer.id, address: 'Test', city: 'Test', country: 'CO') }
+
+    let(:attributes) do
+      {
+        reference: 'TX-SESSION-0001',
+        status: 'PENDING',
+        amount_cents: 100_000,
+        base_fee_cents: 5000,
+        delivery_fee_cents: 10_000,
+        product_id: product.id,
+        customer_id: customer.id,
+        delivery_id: delivery.id,
+        session_id: 'cart-session-uuid'
+      }
+    end
+
+    after do
+      Transaction.where(reference: 'TX-SESSION-0001').delete
+      Delivery.where(id: delivery.id).delete
+      Customer.where(id: customer.id).delete
+      Product.where(id: product.id).delete
+    end
+
+    it 'stores session_id with transaction' do
+      transaction = repo.create(attributes)
+
+      expect(transaction[:session_id]).to eq('cart-session-uuid')
+    end
+
+    it 'allows nil session_id' do
+      attrs_without_session = attributes.except(:session_id)
+      transaction = repo.create(attrs_without_session)
+
+      expect(transaction[:session_id]).to be_nil
     end
   end
 end

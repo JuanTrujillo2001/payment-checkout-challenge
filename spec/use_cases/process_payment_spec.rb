@@ -243,5 +243,106 @@ RSpec.describe UseCases::ProcessPayment do
         use_case.call(transaction_id: 'transaction-uuid', card_data: card_data, installments: 3)
       end
     end
+
+    context 'when payment is approved and repos are provided' do
+      let(:product_repo) { instance_double(Adapters::SequelProductRepository) }
+      let(:cart_repo) { instance_double(Adapters::SequelCartRepository) }
+
+      let(:use_case_with_repos) do
+        described_class.new(
+          transaction_repo: transaction_repo,
+          payment_gateway: payment_gateway,
+          product_repo: product_repo,
+          cart_repo: cart_repo
+        )
+      end
+
+      before do
+        allow(transaction_repo).to receive(:find_by_id).and_return(transaction)
+        allow(transaction_repo).to receive(:update_status).and_return(updated_transaction)
+        allow(Customer).to receive(:[]).and_return(customer)
+        allow(payment_gateway).to receive(:get_acceptance_token).and_return(
+          { success: true, data: { 'acceptance_token' => 'token-123' } }
+        )
+        allow(payment_gateway).to receive(:tokenize_card).and_return(
+          { success: true, data: { 'id' => 'card-token-123' } }
+        )
+        allow(payment_gateway).to receive(:create_payment_source).and_return(
+          { success: true, data: { 'id' => 'source-123' } }
+        )
+        allow(payment_gateway).to receive(:create_transaction).and_return(
+          { success: true, data: { 'id' => 'wompi-tx-123', 'status' => 'APPROVED', 'finalized_at' => '2026-01-28T15:00:00Z' } }
+        )
+
+        # Mock FulfillTransaction
+        fulfill_use_case = instance_double(UseCases::FulfillTransaction)
+        allow(UseCases::FulfillTransaction).to receive(:new).and_return(fulfill_use_case)
+        allow(fulfill_use_case).to receive(:call).and_return(Dry::Monads::Success(updated_transaction))
+      end
+
+      it 'calls FulfillTransaction when payment is approved' do
+        expect(UseCases::FulfillTransaction).to receive(:new).with(
+          transaction_repo: transaction_repo,
+          product_repo: product_repo,
+          cart_repo: cart_repo
+        )
+
+        use_case_with_repos.call(transaction_id: 'transaction-uuid', card_data: card_data)
+      end
+
+      it 'returns Success even after fulfillment' do
+        result = use_case_with_repos.call(transaction_id: 'transaction-uuid', card_data: card_data)
+
+        expect(result).to be_success
+        expect(result.value![:wompi_status]).to eq('APPROVED')
+      end
+    end
+
+    context 'when payment is declined (no fulfillment)' do
+      let(:declined_transaction) do
+        instance_double(
+          'Transaction',
+          id: 'transaction-uuid',
+          reference: 'TX-2026-0001',
+          status: 'DECLINED',
+          amount_cents: 150_000,
+          base_fee_cents: 5000,
+          delivery_fee_cents: 10_000,
+          customer_id: 'customer-uuid',
+          wompi_transaction_id: 'wompi-tx-declined'
+        )
+      end
+
+      before do
+        allow(transaction_repo).to receive(:find_by_id).and_return(transaction)
+        allow(transaction_repo).to receive(:update_status).and_return(declined_transaction)
+        allow(Customer).to receive(:[]).and_return(customer)
+        allow(payment_gateway).to receive(:get_acceptance_token).and_return(
+          { success: true, data: { 'acceptance_token' => 'token-123' } }
+        )
+        allow(payment_gateway).to receive(:tokenize_card).and_return(
+          { success: true, data: { 'id' => 'card-token-123' } }
+        )
+        allow(payment_gateway).to receive(:create_payment_source).and_return(
+          { success: true, data: { 'id' => 'source-123' } }
+        )
+        allow(payment_gateway).to receive(:create_transaction).and_return(
+          { success: true, data: { 'id' => 'wompi-tx-declined', 'status' => 'DECLINED', 'finalized_at' => '2026-01-28T15:00:00Z' } }
+        )
+      end
+
+      it 'does not call FulfillTransaction' do
+        expect(UseCases::FulfillTransaction).not_to receive(:new)
+
+        use_case.call(transaction_id: 'transaction-uuid', card_data: card_data)
+      end
+
+      it 'returns Success with declined status' do
+        result = use_case.call(transaction_id: 'transaction-uuid', card_data: card_data)
+
+        expect(result).to be_success
+        expect(result.value![:wompi_status]).to eq('DECLINED')
+      end
+    end
   end
 end

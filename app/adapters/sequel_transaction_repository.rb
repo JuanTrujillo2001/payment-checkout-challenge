@@ -37,8 +37,8 @@ module Adapters
       transaction = Transaction[id]
       return nil unless transaction
 
-      transaction.update(fulfilled_at: Time.now)
-      transaction
+      Transaction.where(id: id).update(fulfilled_at: Time.now)
+      Transaction[id]
     end
   end
 end
