@@ -10,7 +10,8 @@ get "/products" do
       name: p.name,
       description: p.description,
       price_cents: p.price_cents,
-      stock: p.stock
+      stock: p.stock,
+      image_url: p.image_url
     }
   end
 

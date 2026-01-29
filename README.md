@@ -463,6 +463,33 @@ Beneficios:
 - Fácil composición de operaciones
 - Sin excepciones para control de flujo
 
+## 🌐 CORS
+
+La configuración de CORS usa la variable de entorno `ALLOWED_ORIGINS`:
+
+```ruby
+# config.ru
+origins ENV.fetch('ALLOWED_ORIGINS', '*').split(',').map(&:strip)
+```
+
+### Configuración por entorno
+
+| Entorno | ALLOWED_ORIGINS |
+|---------|-----------------|
+| **Desarrollo** | `*` o `http://localhost:5173` |
+| **Producción (CloudFront)** | `https://d1234abcd.cloudfront.net` |
+| **Múltiples orígenes** | `https://dominio1.com,https://dominio2.com` |
+
+### Ejemplo .env
+
+```env
+# Desarrollo
+ALLOWED_ORIGINS=http://localhost:5173
+
+# Producción con CloudFront
+ALLOWED_ORIGINS=https://d1234abcd.cloudfront.net,https://tu-dominio.com
+```
+
 ## 🔒 Seguridad
 
 - Las credenciales de Wompi se manejan via variables de entorno
@@ -470,10 +497,9 @@ Beneficios:
 - CORS configurado para permitir requests del frontend
 - Validación de datos en cada endpoint
 
-## 📄 Licencia
+## 🚀 Despliegue
 
-MIT
+- **Backend**: [Railway](https://railway.app)
+- **Frontend**: S3 + CloudFront
 
 ---
-
-Desarrollado como parte del challenge técnico de Wompi.

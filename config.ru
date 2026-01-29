@@ -6,8 +6,11 @@ require_relative "./app/db"
 
 use Rack::Cors do
   allow do
-    origins '*'
-    resource '*', headers: :any, methods: [:get, :post, :put, :patch, :delete, :options, :head]
+    origins ENV.fetch('ALLOWED_ORIGINS', '*').split(',').map(&:strip)
+    resource '*', 
+      headers: :any, 
+      methods: [:get, :post, :put, :patch, :delete, :options, :head],
+      max_age: 600
   end
 end
 

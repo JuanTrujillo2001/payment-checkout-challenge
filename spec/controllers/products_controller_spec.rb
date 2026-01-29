@@ -10,8 +10,8 @@ RSpec.describe 'Products Controller' do
   describe 'GET /products' do
     let(:products) do
       [
-        instance_double('Product', id: 'prod-1', name: 'Product 1', description: 'Desc 1', price_cents: 100_000, stock: 10),
-        instance_double('Product', id: 'prod-2', name: 'Product 2', description: 'Desc 2', price_cents: 200_000, stock: 5)
+        instance_double('Product', id: 'prod-1', name: 'Product 1', description: 'Desc 1', price_cents: 100_000, stock: 10, image_url: 'https://example.com/product1.png'),
+        instance_double('Product', id: 'prod-2', name: 'Product 2', description: 'Desc 2', price_cents: 200_000, stock: 5, image_url: 'https://example.com/product2.png')
       ]
     end
 
@@ -38,7 +38,7 @@ RSpec.describe 'Products Controller' do
       get '/products'
 
       body = JSON.parse(last_response.body)
-      expect(body[0]).to include('id', 'name', 'description', 'price_cents', 'stock')
+      expect(body[0]).to include('id', 'name', 'description', 'price_cents', 'stock', 'image_url')
     end
   end
 

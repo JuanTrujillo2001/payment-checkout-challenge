@@ -7,6 +7,7 @@ Sequel.migration do
       String :description, text: true
       Integer :price_cents, null: false
       Integer :stock, null: false, default: 0
+      String :image_url, text: true
 
       DateTime :created_at, default: Sequel::CURRENT_TIMESTAMP
     end
