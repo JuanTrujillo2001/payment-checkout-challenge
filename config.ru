@@ -1,6 +1,11 @@
 require "dotenv/load"
 require "dry/monads"
 require "rack/cors"
+require "sinatra"
+
+# Disable host authorization for cloud deployment
+set :protection, except: [:host_authorization]
+set :bind, '0.0.0.0'
 
 require_relative "./app/db"
 
