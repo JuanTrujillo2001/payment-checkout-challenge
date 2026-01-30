@@ -27,4 +27,4 @@ else
 fi
 
 echo \"Starting server...\"
-exec bundle exec rackup -p \${PORT:-8080} -o 0.0.0.0
+exec bundle exec rackup -p ${PORT:-8080} -o 0.0.0.0
